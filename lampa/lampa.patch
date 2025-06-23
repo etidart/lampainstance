@@ -1,0 +1,173 @@
+diff --git a/gulpfile.js b/gulpfile.js
+index b6c62cd3..fe7eb8d1 100644
+--- a/gulpfile.js
++++ b/gulpfile.js
+@@ -396,3 +396,4 @@ exports.default = parallel(watch, browser_sync);
+ exports.debug = series(enable_debug_mode, this.default)
+ exports.doc = series(sync_doc, buildDoc)
+ exports.write_manifest = series(write_manifest)
++exports.build_custom = series(merge, plugins, sass_task, lang_task, sync_web, build_web)
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index fc911215..3f73e795 100644
+--- a/package.json
++++ b/package.json
+@@ -5,6 +5,7 @@
+   "main": "index.js",
+   "scripts": {
+     "start": "gulp",
++    "build": "gulp build_custom",
+     "debug": "gulp debug",
+     "test": "vitest",
+     "doc": "gulp doc"
+@@ -12,14 +13,6 @@
+   "author": "unk",
+   "license": "ISC",
+   "devDependencies": {
+-    "@rollup/plugin-node-resolve": "^13.0.5",
+-    "chokidar": "^3.5.2",
+-    "gulp": "^4.0.0",
+-    "gulp-concat": "^2.6.1",
+-    "gulp-newer": "^1.4.0",
+-    "vitest": "^0.32.4"
+-  },
+-  "dependencies": {
+     "@babel/core": "^7.15.8",
+     "@babel/preset-env": "^7.15.8",
+     "@rollup/plugin-babel": "^5.3.0",
+@@ -38,8 +31,16 @@
+     "rollup-plugin-regenerator": "^0.6.0",
+     "rollup-plugin-web-worker-loader": "^1.6.1",
+     "sass": "^1.42.1",
+-    "subsrt": "^1.1.1",
++    "@rollup/plugin-node-resolve": "^13.0.5",
++    "chokidar": "^3.5.2",
++    "gulp": "^4.0.0",
++    "gulp-concat": "^2.6.1",
++    "gulp-newer": "^1.4.0",
++    "vitest": "^0.32.4",
+     "vinyl-buffer": "^1.0.1",
+     "vinyl-source-stream": "^2.0.0"
++  },
++  "dependencies": {
++    "subsrt": "^1.1.1"
+   }
+ }
+diff --git a/src/app.js b/src/app.js
+index d2b67079..86ce8bf0 100644
+--- a/src/app.js
++++ b/src/app.js
+@@ -120,30 +120,30 @@ if(typeof window.lampa_settings == 'undefined'){
+ }
+ 
+ Arrays.extend(window.lampa_settings,{
+-    socket_use: true,
++    socket_use: false,
+     socket_url: undefined,
+     socket_methods: true,
+ 
+-    account_use: true,
+-    account_sync: true,
++    account_use: false,
++    account_sync: false,
+ 
+     plugins_use: true,
+-    plugins_store: true,
++    plugins_store: false,
+ 
+     torrents_use: navigator.userAgent.toLowerCase().indexOf("ipad") > -1 && window.innerWidth == 1920 && window.innerHeight == 1080 ? false : true,
+-    white_use: false,
++    white_use: true,
+ 
+     disable_features: {
+-        dmca: false,
+-        reactions: false,
+-        discuss: false,
+-        ai: false,
+-        subscribe: false,
+-        blacklist: false,
+-        persons: false,
+-        ads: false,
+-        trailers: false,
+-        install_proxy: false
++        dmca: true,
++        reactions: true,
++        discuss: true,
++        ai: true,
++        subscribe: true,
++        blacklist: true,
++        persons: true,
++        ads: true,
++        trailers: true,
++        install_proxy: true
+     },
+ 
+     lang_use: true,
+@@ -156,7 +156,7 @@ Arrays.extend(window.lampa_settings,{
+ 
+     iptv: false,
+ 
+-    feed: true
++    feed: false
+ })
+ 
+ 
+diff --git a/src/components/settings/params.js b/src/components/settings/params.js
+index 2a163b21..d9b56d74 100644
+--- a/src/components/settings/params.js
++++ b/src/components/settings/params.js
+@@ -481,7 +481,7 @@ select('poster_size',{
+     'w200': '#{settings_param_poster_quality_low}',
+     'w300': '#{settings_param_poster_quality_average}',
+     'w500': '#{settings_param_poster_quality_high}'
+-},'w200')
++},'w500')
+ 
+ select('parser_torrent_type',{
+     'jackett': 'Jackett',
+@@ -675,9 +675,9 @@ select('cub_domain', mirrors_select, Manifest.cub_domain)
+  */
+ trigger('animation',true)
+ trigger('background',true)
+-trigger('torrserver_savedb',false)
++trigger('torrserver_savedb',true)
+ trigger('torrserver_preload', false)
+-trigger('parser_use',false)
++trigger('parser_use',true)
+ trigger('cloud_use',false)
+ trigger('account_use',false)
+ trigger('torrserver_auth',false)
+@@ -688,7 +688,7 @@ trigger('subtitles_stroke', true)
+ trigger('subtitles_backdrop', false)
+ trigger('screensaver', true)
+ trigger('proxy_tmdb', true)
+-trigger('proxy_tmdb_auto', true)
++trigger('proxy_tmdb_auto', false)
+ trigger('proxy_other', true)
+ trigger('parse_in_search', false)
+ trigger('subtitles_start', false)
+@@ -711,11 +711,11 @@ trigger('interface_sound_play', false)
+ /**
+  * Добовляем поля
+  */
+-select('jackett_url','','')
++select('jackett_url','','https://asd.ad/jackett')
+ select('jackett_key','','')
+ select('prowlarr_url','','');
+ select('prowlarr_key','','');
+-select('torrserver_url','','')
++select('torrserver_url','','https://asd.ad/torrserver')
+ select('torrserver_url_two','','')
+ select('torrserver_login','','')
+ select('torrserver_password','','')
+@@ -725,8 +725,8 @@ select('account_email','','')
+ select('account_password','','')
+ select('device_name','','Lampa')
+ select('player_nw_path','','C:/Program Files/VideoLAN/VLC/vlc.exe')
+-select('tmdb_proxy_api','','')
+-select('tmdb_proxy_image','','')
++select('tmdb_proxy_api','','https://asd.ad/tmdbproxy')
++select('tmdb_proxy_image','','https://asd.ad/tmdbproxy')
+ 
+ export default {
+     listener,

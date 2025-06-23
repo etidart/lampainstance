@@ -1,0 +1,54 @@
+server {
+    listen :443 ssl;
+    server_name asd.ad;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    #ssl_certificate /etc/letsencrypt/live/asd.ad/fullchain.pem;
+    #ssl_certificate_key /etc/letsencrypt/live/asd.ad/privkey.pem;
+    #ssl_trusted_certificate /etc/letsencrypt/live/asd.ad/chain.pem;
+
+    expires $expires;
+    etag on;
+
+    proxy_http_version 1.1;
+
+    location / {
+        root /var/www/html;
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    ### begin of protected locations
+
+    location /lampa {
+        include /etc/nginx/conf.d/cookieauth.conf;
+
+        alias /var/www/lampa;
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    location /torrserver {
+        include /etc/nginx/conf.d/cookieauth.conf;
+
+        proxy_pass http://localhost:8090/;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_connect_timeout 5s;
+    }
+
+    location ~ ^\/tmdbproxy\/https?:\/\/?(api\.themoviedb\.org|imagetmdb\.com)(.*)$ {
+        include /etc/nginx/conf.d/cookieauth.conf;
+
+        proxy_pass https://$1$2;
+        proxy_buffering on;
+        proxy_cache prxcache;
+	    proxy_cache_convert_head on;
+        proxy_cache_key "$1$2";
+        proxy_cache_lock on;
+        proxy_cache_lock_age 5s;
+        proxy_cache_lock_timeout 5s;
+        proxy_cache_valid 200 302 30m;
+        proxy_cache_valid any 1m;
+        proxy_connect_timeout 5s; 
+    }
+}
