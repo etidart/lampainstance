@@ -12,7 +12,7 @@ The ready-made system should include the following elements:
     - [Lampa](https://github.com/yumata/lampa-source) (look for instructions below).
   - **Proxy:**
     - TorrServer (by default to `localhost:8090`).
-    - TMDB (for `api.themoviedb.org` and `imagetmdb.com`).
+    - TMDB (for `api.themoviedb.org` and `image.tmdb.org`).
 - **TorrServer**: [TorrServer-slim](https://github.com/etidart/TorrServer-slim) which is listening on `localhost:8090` by default.
 - **Optional:** Jackett server (not included in this repository due to the availability of many public servers).
 
